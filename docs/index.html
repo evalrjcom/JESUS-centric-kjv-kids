@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jesus-Centric KJV</title>
+  <style>
+    :root {
+      --bg: #0d0f12;
+      --surface: #161a1f;
+      --text: #e8e6e3;
+      --muted: #9a958c;
+      --accent: #c4a574;
+      --border: #2a2f36;
+      --red: #e74c3c;
+      --font-size: 16px;
+      --max-width: 900px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-size: var(--font-size);
+    }
+    header {
+      flex-shrink: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+      z-index: 30;
+    }
+    h1 { margin: 0; font-size: 1.15rem; white-space: nowrap; }
+    .controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; flex: 1; }
+    input, select, button.ctrl {
+      padding: 0.4rem 0.6rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    input[type=search] { flex: 1; min-width: 140px; }
+    #bookSearch { min-width: 120px; max-width: 180px; }
+    #chapterJump { width: 80px; }
+    .btn {
+      background: var(--accent);
+      color: #1a1a1a;
+      border: none;
+      padding: 0.45rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    button.ctrl { cursor: pointer; }
+    button.ctrl.active { background: var(--accent); color: #1a1a1a; }
+    .layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-height: 0;
+    }
+    #sidebar {
+      width: 230px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 0.4rem 0;
+      flex-shrink: 0;
+    }
+    #sidebar a {
+      display: block;
+      padding: 0.55rem 1rem;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-left: 3px solid transparent;
+    }
+    #sidebar a:hover { background: var(--bg); }
+    #sidebar a.active {
+      background: #1e242c;
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+    }
+    #bookBar {
+      flex-shrink: 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.5rem 0.5rem;
+      z-index: 10;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .book-title {
+      font-size: 1.7rem;
+      margin: 0;
+      color: var(--accent);
+    }
+    #status {
+      color: var(--muted);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    #verses {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+      position: relative;
+    }
+    #virtualSpacer { width: 100%; }
+    #virtualWindow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 0.5rem 1.5rem 2rem;
+    }
+    .chapter-title {
+      font-size: 1.15rem;
+      margin: 1.2rem 0 0.4rem;
+      color: var(--muted);
+    }
+    .book-header {
+      font-size: 1.25rem;
+      margin: 1.4rem 0 0.4rem;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.2rem;
+    }
+    .verse {
+      margin: 0.35rem 0;
+      display: flex;
+      gap: 0.5rem;
+      align-items: baseline;
+    }
+    .verse-ref {
+      color: var(--muted);
+      font-weight: 500;
+      min-width: 3.2rem;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+      font-size: 0.85em;
+    }
+    .divine { color: var(--red); font-weight: 600; }
+    mark { background: #5c4a2a; color: var(--text); }
+    #backTop {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--accent);
+      color: #1a1a1a;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.3rem;
+      display: none;
+      z-index: 40;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    #backTop.show { display: block; }
+    .settings-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+    }
+    .settings-row label { color: var(--muted); }
+    @media (max-width: 700px) {
+      header {
+        padding: 0.4rem 0.5rem;
+        gap: 0.4rem;
+      }
+      h1 { font-size: 1rem; }
+      .controls {
+        width: 100%;
+        gap: 0.35rem;
+      }
+      input, select, button.ctrl, .btn {
+        padding: 0.55rem 0.7rem;
+        font-size: 1rem;
+        min-height: 44px;
+      }
+      input[type=search] { min-width: 0; flex: 1 1 140px; }
+      #bookSearch { min-width: 0; max-width: none; flex: 1 1 120px; }
+      #chapterJump { width: 70px; min-width: 70px; }
+      .settings-row {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .settings-row label { font-size: 0.8rem; }
+      .layout { flex-direction: column; }
+      #sidebar {
+        width: 100%;
+        max-height: 180px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.3rem 0;
+        -webkit-overflow-scrolling: touch;
+      }
+      #sidebar a {
+        padding: 0.6rem 0.9rem;
+        white-space: nowrap;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+      }
+      #sidebar a.active {
+        border-left-color: transparent;
+        border-bottom-color: var(--accent);
+      }
+      main { max-width: none; }
+      #bookBar {
+        padding: 0.5rem 0.8rem 0.4rem;
+        flex-wrap: wrap;
+      }
+      .book-title { font-size: 1.35rem; }
+      #status { font-size: 0.8rem; }
+      #virtualWindow { padding: 0.4rem 0.8rem 3rem; }
+      .verse { margin: 0.5rem 0; }
+      .verse-ref { min-width: 2.8rem; font-size: 0.9em; }
+      #backTop {
+        bottom: 1rem;
+        right: 1rem;
+        width: 48px;
+        height: 48px;
+        font-size: 1.4rem;
+      }
+    }
+    @media (max-width: 420px) {
+      header { flex-wrap: wrap; }
+      h1 { width: 100%; margin-bottom: 0.2rem; }
+      .controls { gap: 0.3rem; }
+      #search { flex: 1 1 100%; order: 10; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Jesus-Centric KJV</h1>
+    <div class="controls">
+      <input type="search" id="bookSearch" placeholder="Find book…" list="bookList" />
+      <datalist id="bookList"></datalist>
+      <select id="chapterJump" title="Jump to chapter"></select>
+      <input type="search" id="search" placeholder="Search verses…" />
+      <button class="ctrl" id="redToggle" title="Show only red-letter verses">Red only</button>
+      <button class="ctrl" id="colorCycle" title="Cycle red color">Color</button>
+      <div class="settings-row">
+        <label>Size <input type="range" id="fontSize" min="14" max="22" value="16" style="width:70px"></label>
+        <label>Width <input type="range" id="readWidth" min="600" max="1200" value="900" step="50" style="width:70px"></label>
+      </div>
+      <a class="btn" id="suggest" href="#" target="_blank">Suggest</a>
+    </div>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main>
+      <div id="bookBar">
+        <h2 class="book-title" id="bookTitle">Loading…</h2>
+        <span id="status"></span>
+      </div>
+      <div id="verses">
+        <div id="virtualSpacer"></div>
+        <div id="virtualWindow"></div>
+      </div>
+    </main>
+  </div>
+  <button id="backTop" title="Back to top">↑</button>
+  <script>
+    const REPO = "evalrjcom/jesus-centric-kjv";
+    const TXT_URL = "jesus_centric_kjv_all66.txt";
+    const versesEl = document.getElementById("verses");
+    const spacerEl = document.getElementById("virtualSpacer");
+    const windowEl = document.getElementById("virtualWindow");
+    const bookTitleEl = document.getElementById("bookTitle");
+    const sidebarEl = document.getElementById("sidebar");
+    const searchEl = document.getElementById("search");
+    const bookSearchEl = document.getElementById("bookSearch");
+    const chapterJumpEl = document.getElementById("chapterJump");
+    const statusEl = document.getElementById("status");
+    const suggestEl = document.getElementById("suggest");
+    const redToggleEl = document.getElementById("redToggle");
+    const colorCycleEl = document.getElementById("colorCycle");
+    const fontSizeEl = document.getElementById("fontSize");
+    const readWidthEl = document.getElementById("readWidth");
+    const backTopEl = document.getElementById("backTop");
+    const bookListEl = document.getElementById("bookList");
+
+    let books = [];
+    let currentBook = 0;
+    let currentChapter = 1;
+    let redOnly = false;
+    const redColors = ["#e74c3c", "#ff6b6b", "#c0392b", "#e67e22", "#f39c12"];
+    let colorIdx = 0;
+
+    let items = [];
+    let itemHeight = 42;
+    let buffer = 8;
+    let lastStart = -1;
+
+    function highlightDivine(text) {
+      return text
+        .replace(/\b(JESUS|LORD|GOD)\b/g, '<span class="divine">$1</span>')
+        .replace(/\bI AM\b/g, '<span class="divine">I AM</span>')
+        .replace(/\[JESUS\]/g, '<span class="divine">[JESUS]</span>');
+    }
+
+    function hasDivine(text) {
+      return /\b(JESUS|LORD|GOD)\b|\bI AM\b|\[JESUS\]/.test(text);
+    }
+
+    function parseText(raw) {
+      const lines = raw.split(/\r?\n/);
+      let current = null;
+      books = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (/^[A-Z0-9 ]+$/.test(trimmed) && !trimmed.includes(":")) {
+          current = { name: trimmed, verses: [] };
+          books.push(current);
+          continue;
+        }
+        const m = trimmed.match(/^(\d+):(\d+):\s+(.*)/);
+        if (m && current) {
+          current.verses.push({
+            ref: `${m[1]}:${m[2]}`,
+            chapter: parseInt(m[1], 10),
+            text: m[3]
+          });
+        }
+      }
+    }
+
+    function savePosition() {
+      localStorage.setItem("kjv-pos", JSON.stringify({
+        book: currentBook,
+        chapter: currentChapter,
+        redOnly,
+        colorIdx,
+        fontSize: fontSizeEl.value,
+        maxWidth: readWidthEl.value
+      }));
+    }
+
+    function loadPosition() {
+      try {
+        const p = JSON.parse(localStorage.getItem("kjv-pos") || "{}");
+        if (typeof p.book === "number" && books[p.book]) currentBook = p.book;
+        if (typeof p.chapter === "number") currentChapter = p.chapter;
+        if (typeof p.redOnly === "boolean") {
+          redOnly = p.redOnly;
+          redToggleEl.classList.toggle("active", redOnly);
+        }
+        if (typeof p.colorIdx === "number") {
+          colorIdx = p.colorIdx % redColors.length;
+          document.documentElement.style.setProperty("--red", redColors[colorIdx]);
+        }
+        if (p.fontSize) {
+          fontSizeEl.value = p.fontSize;
+          document.documentElement.style.setProperty("--font-size", p.fontSize + "px");
+        }
+        if (p.maxWidth) {
+          readWidthEl.value = p.maxWidth;
+          document.documentElement.style.setProperty("--max-width", p.maxWidth + "px");
+        }
+      } catch (e) {}
+    }
+
+    function renderSidebar() {
+      sidebarEl.innerHTML = "";
+      books.forEach((b, i) => {
+        const a = document.createElement("a");
+        a.href = "#";
+        a.textContent = b.name;
+        a.onclick = (e) => {
+          e.preventDefault();
+          currentChapter = 1;
+          showBook(i);
+          setActiveSidebar(i);
+        };
+        sidebarEl.appendChild(a);
+      });
+      updateBookDatalist("");
+    }
+
+    function updateBookDatalist(query) {
+      bookListEl.innerHTML = "";
+      const q = (query || "").toUpperCase();
+      const starts = [];
+      const contains = [];
+      books.forEach(b => {
+        const name = b.name.toUpperCase();
+        if (!q) starts.push(b.name);
+        else if (name.startsWith(q)) starts.push(b.name);
+        else if (name.includes(q)) contains.push(b.name);
+      });
+      [...starts, ...contains].forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        bookListEl.appendChild(opt);
+      });
+    }
+
+    function setActiveSidebar(idx) {
+      sidebarEl.querySelectorAll("a").forEach((a, i) => {
+        a.classList.toggle("active", i === idx);
+      });
+    }
+
+    function updateChapterSelect() {
+      const book = books[currentBook];
+      if (!book) return;
+      const chaps = [...new Set(book.verses.map(v => v.chapter))].sort((a,b) => a-b);
+      chapterJumpEl.innerHTML = "";
+      chaps.forEach(c => {
+        const o = document.createElement("option");
+        o.value = c;
+        o.textContent = "Ch " + c;
+        if (c === currentChapter) o.selected = true;
+        chapterJumpEl.appendChild(o);
+      });
+    }
+
+    function buildItems(book, query) {
+      const list = [];
+      const q = query.trim().toLowerCase();
+      let lastChap = 0;
+      book.verses.forEach(v => {
+        if (redOnly && !hasDivine(v.text)) return;
+        if (q && !(v.ref + " " + v.text).toLowerCase().includes(q)) return;
+        if (v.chapter !== lastChap) {
+          list.push({ type: "ch", chapter: v.chapter });
+          lastChap = v.chapter;
+        }
+        list.push({ type: "v", verse: v, query: q });
+      });
+      return list;
+    }
+
+    function renderWindow() {
+      if (!items.length) {
+        windowEl.innerHTML = "";
+        spacerEl.style.height = "0";
+        return;
+      }
+      const scrollTop = versesEl.scrollTop;
+      const viewH = versesEl.clientHeight;
+      const start = Math.max(0, Math.floor(scrollTop / itemHeight) - buffer);
+      const end = Math.min(items.length, Math.ceil((scrollTop + viewH) / itemHeight) + buffer);
+      if (start === lastStart && end === lastStart + (end - start)) return;
+      lastStart = start;
+
+      spacerEl.style.height = (items.length * itemHeight) + "px";
+      windowEl.style.transform = `translateY(${start * itemHeight}px)`;
+
+      const frag = document.createDocumentFragment();
+      for (let i = start; i < end; i++) {
+        const it = items[i];
+        if (it.type === "ch") {
+          const h = document.createElement("h3");
+          if (it.bookName) {
+            h.className = "book-header";
+            h.textContent = it.bookName;
+          } else {
+            h.className = "chapter-title";
+            h.id = "ch-" + it.chapter;
+            h.textContent = "Chapter " + it.chapter;
+          }
+          frag.appendChild(h);
+        } else {
+          const div = document.createElement("div");
+          div.className = "verse";
+          let text = highlightDivine(it.verse.text);
+          if (it.query) {
+            const esc = it.query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            text = text.replace(new RegExp(`(${esc})`, "gi"), "<mark>$1</mark>");
+          }
+          div.innerHTML = `<span class="verse-ref">${it.verse.ref}</span><span>${text}</span>`;
+          frag.appendChild(div);
+        }
+      }
+      windowEl.innerHTML = "";
+      windowEl.appendChild(frag);
+    }
+
+    function showBook(idx) {
+      currentBook = idx;
+      const book = books[idx];
+      if (!book) return;
+      bookTitleEl.textContent = book.name;
+      const q = searchEl.value.trim();
+      items = buildItems(book, q);
+      statusEl.textContent = `${items.filter(i => i.type === "v").length} verses`;
+      lastStart = -1;
+      updateChapterSelect();
+      setActiveSidebar(idx);
+      savePosition();
+      versesEl.scrollTop = 0;
+      renderWindow();
+
+      if (currentChapter > 1) {
+        const idxCh = items.findIndex(it => it.type === "ch" && it.chapter === currentChapter);
+        if (idxCh >= 0) {
+          versesEl.scrollTop = idxCh * itemHeight;
+          renderWindow();
+        }
+      }
+    }
+
+    function doSearch() {
+      const q = searchEl.value.trim();
+      if (!q) {
+        showBook(currentBook);
+        return;
+      }
+      bookTitleEl.textContent = "Search results";
+      items = [];
+      books.forEach(book => {
+        const matches = book.verses.filter(v => {
+          if (redOnly && !hasDivine(v.text)) return false;
+          return (v.ref + " " + v.text).toLowerCase().includes(q.toLowerCase());
+        });
+        if (!matches.length) return;
+        items.push({ type: "ch", bookName: book.name });
+        matches.forEach(v => items.push({ type: "v", verse: v, query: q.toLowerCase() }));
+      });
+      statusEl.textContent = items.filter(i => i.type === "v").length + " matches";
+      lastStart = -1;
+      versesEl.scrollTop = 0;
+      renderWindow();
+    }
+
+    function updateSuggest() {
+      const title = encodeURIComponent("Jesus reference suggestion");
+      const body = encodeURIComponent("**Book / Chapter:Verse:**\n\n**Current text:**\n\n**Suggested change:**\n\n**Reason:**\n");
+      suggestEl.href = `https://github.com/${REPO}/issues/new?title=${title}&body=${body}&labels=suggestion`;
+    }
+
+    function findBestBookMatch(query) {
+      if (!query || query.length < 2) return -1;
+      const q = query.toUpperCase();
+      for (let i = 0; i < books.length; i++) {
+        if (books[i].name.toUpperCase().startsWith(q)) return i;
+      }
+      for (let i = 0; i < books.length; i++) {
+        if (books[i].name.toUpperCase().includes(q)) return i;
+      }
+      return -1;
+    }
+
+    versesEl.onscroll = () => {
+      renderWindow();
+      backTopEl.classList.toggle("show", versesEl.scrollTop > 400);
+    };
+
+    bookSearchEl.oninput = () => {
+      const val = bookSearchEl.value.trim();
+      updateBookDatalist(val);
+      const idx = findBestBookMatch(val);
+      if (idx >= 0 && val.length >= 2) {
+        currentChapter = 1;
+        showBook(idx);
+      }
+    };
+
+    bookSearchEl.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        const val = bookSearchEl.value.trim();
+        const idx = findBestBookMatch(val);
+        if (idx >= 0) {
+          currentChapter = 1;
+          showBook(idx);
+          bookSearchEl.value = "";
+          updateBookDatalist("");
+          bookSearchEl.blur();
+        }
+      }
+    };
+
+    chapterJumpEl.onchange = () => {
+      currentChapter = parseInt(chapterJumpEl.value, 10);
+      const idxCh = items.findIndex(it => it.type === "ch" && it.chapter === currentChapter);
+      if (idxCh >= 0) {
+        versesEl.scrollTop = idxCh * itemHeight;
+        renderWindow();
+      }
+      savePosition();
+    };
+
+    let searchTimer = null;
+    searchEl.oninput = () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        if (searchEl.value.trim()) doSearch();
+        else showBook(currentBook);
+      }, 180);
+    };
+
+    redToggleEl.onclick = () => {
+      redOnly = !redOnly;
+      redToggleEl.classList.toggle("active", redOnly);
+      if (searchEl.value.trim()) doSearch();
+      else showBook(currentBook);
+      savePosition();
+    };
+
+    colorCycleEl.onclick = () => {
+      colorIdx = (colorIdx + 1) % redColors.length;
+      document.documentElement.style.setProperty("--red", redColors[colorIdx]);
+      savePosition();
+    };
+
+    fontSizeEl.oninput = () => {
+      document.documentElement.style.setProperty("--font-size", fontSizeEl.value + "px");
+      savePosition();
+    };
+
+    readWidthEl.oninput = () => {
+      document.documentElement.style.setProperty("--max-width", readWidthEl.value + "px");
+      savePosition();
+    };
+
+    backTopEl.onclick = () => {
+      versesEl.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    async function load() {
+      try {
+        const res = await fetch(TXT_URL);
+        if (!res.ok) throw new Error("fetch failed");
+        const raw = await res.text();
+        parseText(raw);
+        renderSidebar();
+        loadPosition();
+        showBook(currentBook);
+        updateSuggest();
+        statusEl.textContent = `${books.length} books`;
+      } catch (e) {
+        statusEl.textContent = "Processed text not found.";
+        windowEl.innerHTML = "<p>The processed text file is not yet available.</p>";
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
