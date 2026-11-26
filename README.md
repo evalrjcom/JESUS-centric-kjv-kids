@@ -1,23 +1,24 @@
-# Jesus-Centric KJV
+# Jesus-Centric KJV for Kids ✝
 
-Independent modernization and Jesus-centric markup of the public-domain King James Version.
+Kid-friendly searchable viewer for the Jesus-centric modernization of the public-domain King James Version.
 
 ## Features
-- Lexical modernization of archaic language
-- LORD / GOD in all caps
-- Name Jesus forced to JESUS
-- [JESUS] markers on configured titles and (contextually) pronouns
-- GitHub Pages searchable viewer organized by books, with **JESUS**, **LORD**, and **GOD** highlighted in red
-- Suggest-a-change button that opens a pre-filled Issue
-- GitHub Action that regenerates the processed text on changes to the processor
+- Emojis next to key words to help children understand (e.g. ✝ for JESUS / cross, ❤️ for love, 🌟 for LORD, 🕊️ for peace, 🙏 for faith / pray)
+- LORD / GOD in all caps, name Jesus forced to JESUS, with [JESUS] markers on titles
+- Red-letter highlighting for JESUS, LORD, and GOD
+- Searchable by book, chapter, or verse text
+- Light, playful theme sized for kids
+- Suggest-a-change button that opens a pre-filled GitHub Issue
 
-## Usage
-```bash
-python3 jesus_centric_kjv_processor.py input_kjv.txt output.txt
-```
+## Source text
+The processed Bible text (`docs/jesus_centric_kjv_all66.txt`) is always copied from the latest version in the main repository:
+
+https://github.com/evalrjcom/jesus-centric-kjv/blob/main/docs/jesus_centric_kjv_all66.txt
+
+There is no local processor or GitHub Action in this kids repo. When the main repo updates the processed text, copy the new file into `docs/` here to keep the kids site current.
 
 ## Viewer (GitHub Pages)
-The processed text is served from the `/docs` folder.
+The site is served from the `/docs` folder.
 
 **To enable GitHub Pages:**
 1. Go to repository Settings → Pages
@@ -25,14 +26,6 @@ The processed text is served from the `/docs` folder.
 3. Branch: `main` / folder: `/docs`
 4. Save
 
-The site will be available at `https://evalrjcom.github.io/jesus-centric-kjv/`.
+The kids site will be available at `https://evalrjcom.github.io/JESUS-centric-kjv-kids/`.
 
-The GitHub Action (`.github/workflows/process-kjv.yml`) automatically:
-- Downloads a clean public-domain KJV source
-- Runs the processor
-- Commits the updated `docs/jesus_centric_kjv_all66.txt` when the processor changes (or on manual workflow run)
-- Comments on new/edited issues
-
-Trigger the workflow manually from the Actions tab if you want to regenerate the text immediately.
-
-Source text: public-domain KJV (via structured plaintext books).
+Source text: public-domain KJV (processed in the main [jesus-centric-kjv](https://github.com/evalrjcom/jesus-centric-kjv) repo).
