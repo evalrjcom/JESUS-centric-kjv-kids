@@ -16,6 +16,23 @@
       --font-size: 18px;
       --max-width: 900px;
     }
+    html.dark {
+      --bg: #1a1612;
+      --surface: #25201a;
+      --text: #f5efe6;
+      --muted: #b5a896;
+      --accent: #f39c12;
+      --border: #3d342a;
+      --red: #ff6b6b;
+    }
+    html.dark #sidebar a.active {
+      background: #3d342a;
+    }
+    html.dark mark {
+      background: #5c4a1f;
+      color: #f5efe6;
+    }
+
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
     body {
@@ -297,6 +314,8 @@
       <input type="search" id="search" placeholder="Search verses…" />
       <button class="ctrl" id="redToggle" title="Show only red-letter verses">Red only</button>
       <button class="ctrl" id="colorCycle" title="Cycle red color">Color</button>
+      <button class="ctrl" id="themeToggle" title="Toggle light/dark mode">🌙 Dark</button>
+
       <div class="settings-row">
         <label>Size <input type="range" id="fontSize" min="14" max="22" value="18" style="width:70px"></label>
         <label>Width <input type="range" id="readWidth" min="600" max="1200" value="900" step="50" style="width:70px"></label>
@@ -333,6 +352,8 @@
     const suggestEl = document.getElementById("suggest");
     const redToggleEl = document.getElementById("redToggle");
     const colorCycleEl = document.getElementById("colorCycle");
+    const themeToggleEl = document.getElementById("themeToggle");
+
     const fontSizeEl = document.getElementById("fontSize");
     const readWidthEl = document.getElementById("readWidth");
     const backTopEl = document.getElementById("backTop");
@@ -353,81 +374,53 @@
     function kidsEmojis(text) {
       const map = [
         [/\bJESUS\b/gi, '✝ JESUS'],
-        [/\bChrist\b/gi, '✝ Christ'],
-        [/\bcross\b/gi, '✝ cross'],
         [/\bLORD\b/gi, '🌟 LORD'],
         [/\bGOD\b/gi, '✨ GOD'],
         [/\blove\b/gi, '❤️ love'],
         [/\bloved\b/gi, '❤️ loved'],
-        [/\bloves\b/gi, '❤️ loves'],
-        [/\bloving\b/gi, '❤️ loving'],
         [/\bheart\b/gi, '❤️ heart'],
-        [/\bhearts\b/gi, '❤️ hearts'],
         [/\blight\b/gi, '💡 light'],
         [/\bking\b/gi, '👑 king'],
-        [/\bkings\b/gi, '👑 kings'],
-        [/\bkingdom\b/gi, '🏰 kingdom'],
-        [/\bprince\b/gi, '👑 prince'],
         [/\bpeace\b/gi, '🕊️ peace'],
-        [/\bpeaceful\b/gi, '🕊️ peaceful'],
         [/\bjoy\b/gi, '😊 joy'],
-        [/\bjoyful\b/gi, '😊 joyful'],
         [/\bsave\b/gi, '🛟 save'],
         [/\bsaved\b/gi, '🛟 saved'],
-        [/\bsaves\b/gi, '🛟 saves'],
-        [/\bsaving\b/gi, '🛟 saving'],
         [/\bsaviour\b/gi, '🛟 Saviour'],
         [/\bsavior\b/gi, '🛟 Savior'],
         [/\bheaven\b/gi, '☁️ heaven'],
-        [/\bheavens\b/gi, '☁️ heavens'],
         [/\bangel\b/gi, '😇 angel'],
         [/\bangels\b/gi, '😇 angels'],
         [/\bstar\b/gi, '⭐ star'],
         [/\bstars\b/gi, '⭐ stars'],
         [/\bsheep\b/gi, '🐑 sheep'],
         [/\bshepherd\b/gi, '🐑 shepherd'],
-        [/\blamb\b/gi, '🐑 lamb'],
         [/\bbread\b/gi, '🍞 bread'],
         [/\bwater\b/gi, '💧 water'],
-        [/\bfish\b/gi, '🐟 fish'],
         [/\blife\b/gi, '🌱 life'],
-        [/\blives\b/gi, '🌱 lives'],
         [/\bchild\b/gi, '🧒 child'],
         [/\bchildren\b/gi, '🧒 children'],
         [/\bgood\b/gi, '👍 good'],
         [/\bsin\b/gi, '🚫 sin'],
-        [/\bsins\b/gi, '🚫 sins'],
         [/\bforgive\b/gi, '🙏 forgive'],
         [/\bforgiveness\b/gi, '🙏 forgiveness'],
-        [/\bforgiven\b/gi, '🙏 forgiven'],
-        [/\bforgave\b/gi, '🙏 forgave'],
         [/\bpray\b/gi, '🙏 pray'],
         [/\bprayer\b/gi, '🙏 prayer'],
-        [/\bprayers\b/gi, '🙏 prayers'],
-        [/\bfaith\b/gi, '🙏 faith'],
         [/\bmiracle\b/gi, '✨ miracle'],
-        [/\bmiracles\b/gi, '✨ miracles'],
         [/\bheal\b/gi, '🩹 heal'],
         [/\bhealed\b/gi, '🩹 healed'],
-        [/\bhealing\b/gi, '🩹 healing'],
+        [/\bcross\b/gi, '✝ cross'],
         [/\brisen\b/gi, '🌅 risen'],
         [/\bresurrection\b/gi, '🌅 resurrection'],
         [/\bbirth\b/gi, '👶 birth'],
-        [/\bborn\b/gi, '👶 born'],
         [/\bbaby\b/gi, '👶 baby'],
         [/\bworld\b/gi, '🌍 world'],
         [/\btruth\b/gi, '📖 truth'],
         [/\bway\b/gi, '🛤️ way'],
         [/\bfishers\b/gi, '🎣 fishers'],
         [/\bman\b/gi, '👨 man'],
-        [/\bmen\b/gi, '👨 men'],
         [/\bwoman\b/gi, '👩 woman'],
-        [/\bwomen\b/gi, '👩 women'],
-        [/\bfather\b/gi, '👨 father'],
-        [/\bmother\b/gi, '👩 mother'],
-        [/\bson\b/gi, '👦 son'],
-        [/\bdaughter\b/gi, '👧 daughter'],
         [/\bhope\b/gi, '🌈 hope'],
+        [/\bfaith\b/gi, '🙏 faith'],
         [/\bgrace\b/gi, '🌸 grace'],
         [/\bbless\b/gi, '🙌 bless'],
         [/\bblessed\b/gi, '🙌 blessed'],
@@ -445,14 +438,94 @@
         [/\bwise\b/gi, '🦉 wise'],
         [/\bwisdom\b/gi, '🦉 wisdom'],
         [/\bholy\b/gi, '✨ holy'],
+        [/\bspirt\b/gi, '💨 Spirit'],
         [/\bspirit\b/gi, '💨 Spirit'],
         [/\bchurch\b/gi, '⛪ church'],
+        [/\bpray\b/gi, '🙏 pray'],
+        [/\bprayers\b/gi, '🙏 prayers'],
+        [/\bforgiven\b/gi, '🙏 forgiven'],
+        [/\bforgave\b/gi, '🙏 forgave'],
+        [/\blamb\b/gi, '🐑 lamb'],
+        [/\bbread\b/gi, '🍞 bread'],
+        [/\bfish\b/gi, '🐟 fish'],
+        [/\bwater\b/gi, '💧 water'],
+        [/\blight\b/gi, '💡 light'],
         [/\bdark\b/gi, '🌙 dark'],
         [/\bdarkness\b/gi, '🌙 darkness'],
         [/\bday\b/gi, '☀️ day'],
         [/\bnight\b/gi, '🌙 night'],
         [/\bsun\b/gi, '☀️ sun'],
-        [/\bmoon\b/gi, '🌙 moon']
+        [/\bmoon\b/gi, '🌙 moon'],
+        [/\bstar\b/gi, '⭐ star'],
+        [/\bstars\b/gi, '⭐ stars'],
+        [/\bheart\b/gi, '❤️ heart'],
+        [/\bhearts\b/gi, '❤️ hearts'],
+        [/\bjoy\b/gi, '😊 joy'],
+        [/\bjoyful\b/gi, '😊 joyful'],
+        [/\bpeace\b/gi, '🕊️ peace'],
+        [/\bpeaceful\b/gi, '🕊️ peaceful'],
+        [/\blove\b/gi, '❤️ love'],
+        [/\bloved\b/gi, '❤️ loved'],
+        [/\bloves\b/gi, '❤️ loves'],
+        [/\bloving\b/gi, '❤️ loving'],
+        [/\bking\b/gi, '👑 king'],
+        [/\bkings\b/gi, '👑 kings'],
+        [/\bkingdom\b/gi, '🏰 kingdom'],
+        [/\bprince\b/gi, '👑 prince'],
+        [/\blord\b/gi, '🌟 LORD'],
+        [/\bgod\b/gi, '✨ GOD'],
+        [/\bjesus\b/gi, '✝ JESUS'],
+        [/\bchrist\b/gi, '✝ Christ'],
+        [/\bsaviour\b/gi, '🛟 Saviour'],
+        [/\bsavior\b/gi, '🛟 Savior'],
+        [/\bsaved\b/gi, '🛟 saved'],
+        [/\bsaves\b/gi, '🛟 saves'],
+        [/\bsaving\b/gi, '🛟 saving'],
+        [/\bheaven\b/gi, '☁️ heaven'],
+        [/\bheavens\b/gi, '☁️ heavens'],
+        [/\bangel\b/gi, '😇 angel'],
+        [/\bangels\b/gi, '😇 angels'],
+        [/\bsheep\b/gi, '🐑 sheep'],
+        [/\bshepherd\b/gi, '🐑 shepherd'],
+        [/\blamb\b/gi, '🐑 lamb'],
+        [/\bbread\b/gi, '🍞 bread'],
+        [/\bwater\b/gi, '💧 water'],
+        [/\blife\b/gi, '🌱 life'],
+        [/\blives\b/gi, '🌱 lives'],
+        [/\bchild\b/gi, '🧒 child'],
+        [/\bchildren\b/gi, '🧒 children'],
+        [/\bgood\b/gi, '👍 good'],
+        [/\bsin\b/gi, '🚫 sin'],
+        [/\bsins\b/gi, '🚫 sins'],
+        [/\bforgive\b/gi, '🙏 forgive'],
+        [/\bforgiveness\b/gi, '🙏 forgiveness'],
+        [/\bpray\b/gi, '🙏 pray'],
+        [/\bprayer\b/gi, '🙏 prayer'],
+        [/\bmiracle\b/gi, '✨ miracle'],
+        [/\bmiracles\b/gi, '✨ miracles'],
+        [/\bheal\b/gi, '🩹 heal'],
+        [/\bhealed\b/gi, '🩹 healed'],
+        [/\bhealing\b/gi, '🩹 healing'],
+        [/\bcross\b/gi, '✝ cross'],
+        [/\brisen\b/gi, '🌅 risen'],
+        [/\bresurrection\b/gi, '🌅 resurrection'],
+        [/\bbirth\b/gi, '👶 birth'],
+        [/\bborn\b/gi, '👶 born'],
+        [/\bbaby\b/gi, '👶 baby'],
+        [/\bworld\b/gi, '🌍 world'],
+        [/\btruth\b/gi, '📖 truth'],
+        [/\bway\b/gi, '🛤️ way'],
+        [/\bfishers\b/gi, '🎣 fishers'],
+        [/\bman\b/gi, '👨 man'],
+        [/\bmen\b/gi, '👨 men'],
+        [/\bwoman\b/gi, '👩 woman'],
+        [/\bwomen\b/gi, '👩 women'],
+        [/\bfather\b/gi, '👨 father'],
+        [/\bmother\b/gi, '👩 mother'],
+        [/\bson\b/gi, '👦 son'],
+        [/\bdaughter\b/gi, '👧 daughter'],
+        [/\bfriend\b/gi, '🤝 friend'],
+        [/\bfriends\b/gi, '🤝 friends']
       ];
       let out = text;
       for (const [re, repl] of map) {
@@ -789,7 +862,30 @@
       versesEl.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    async function load() {
+
+    // Theme toggle (light by default)
+    function applyTheme(dark) {
+      document.documentElement.classList.toggle("dark", dark);
+      if (themeToggleEl) {
+        themeToggleEl.textContent = dark ? "☀️ Light" : "🌙 Dark";
+        themeToggleEl.title = dark ? "Switch to light mode" : "Switch to dark mode";
+      }
+      localStorage.setItem("kjv-theme", dark ? "dark" : "light");
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem("kjv-theme");
+      applyTheme(saved === "dark");
+    }
+
+    if (themeToggleEl) {
+      themeToggleEl.onclick = () => {
+        const isDark = document.documentElement.classList.contains("dark");
+        applyTheme(!isDark);
+      };
+    }
+
+        async function load() {
       try {
         const res = await fetch(TXT_URL);
         if (!res.ok) throw new Error("fetch failed");
@@ -806,6 +902,7 @@
       }
     }
 
+    loadTheme();
     load();
   </script>
 </body>
