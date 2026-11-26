@@ -1,0 +1,40 @@
+name: Sync Bible Text
+
+on:
+  schedule:
+    # Run daily at 06:00 UTC (around 10pm or 11pm previous day PT)
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual runs from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kids repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download latest Bible text from main repo
+        run: |
+          curl -fsSL -o /tmp/latest.txt \
+            https://raw.githubusercontent.com/evalrjcom/jesus-centric-kjv/main/docs/jesus_centric_kjv_all66.txt
+          echo "Downloaded $(wc -c < /tmp/latest.txt) bytes"
+
+      - name: Check for changes and commit if different
+        run: |
+          if cmp -s /tmp/latest.txt docs/jesus_centric_kjv_all66.txt; then
+            echo "No changes detected. Bible text is already up to date."
+          else
+            echo "Changes detected. Updating Bible text…"
+            cp /tmp/latest.txt docs/jesus_centric_kjv_all66.txt
+            git config --local user.name "github-actions[bot]"
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/jesus_centric_kjv_all66.txt
+            git commit -m "Sync latest processed Bible text from main jesus-centric-kjv repo [skip ci]"
+            git push
+            echo "Bible text updated and pushed."
+          fi
